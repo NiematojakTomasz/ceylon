@@ -106,7 +106,7 @@ public class CompatTests extends CompilerTests {
         runInJBossModules("run", "compiled120", Arrays.asList(
                 "--offline",
                 "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules", 
-                "--run", "compiled120::runOn121_",
+                "--run", "compiled120::runOn121",
                 "--flat-classpath"));
     }
     @Test
@@ -182,7 +182,7 @@ public class CompatTests extends CompilerTests {
                             "--offline",
                             "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules",
                             "--run", "compiled1299::runOn121",
-                            "--downgrade-dist"),
+                            "--link-with-current-distribution"),
                     null, out);
             // Check it returned OK
             Assert.assertEquals(0, sc);
@@ -222,7 +222,7 @@ public class CompatTests extends CompilerTests {
                             "--offline",
                             "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules",
                             "--run", "compiled1299depends121::runOn121",
-                            "--downgrade-dist"),
+                            "--link-with-current-distribution"),
                     null, out);
             // Check it returned an error status code
             Assert.assertEquals(0, sc);
@@ -261,7 +261,7 @@ public class CompatTests extends CompilerTests {
                             "--offline",
                             "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules",
                             "--run", "compiled1299depends120::runOn121",
-                            "--downgrade-dist"),
+                            "--link-with-current-distribution"),
                     null, out);
             // Check it returned an error status code
             Assert.assertEquals(0, sc);
@@ -294,7 +294,7 @@ public class CompatTests extends CompilerTests {
             int sc = runInJBossModules("run", "compiled1299", 
                     Arrays.asList("--flat-classpath", 
                             "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules",
-                            "--run", "compiled1299::runOn121_"),
+                            "--run", "compiled1299::runOn121"),
                     err, null);
             // Check it returned an error status code
             String expectedLine = "ceylon run: Could not find module: ceylon.language/1.2.99";
@@ -312,8 +312,8 @@ public class CompatTests extends CompilerTests {
             int sc = runInJBossModules("run", "compiled1299", 
                     Arrays.asList("--flat-classpath", 
                             "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules",
-                            "--run", "compiled1299::runOn121_",
-                            "--downgrade-dist"),
+                            "--run", "compiled1299::runOn121",
+                            "--link-with-current-distribution"),
                     null, out);
             // Check it returned an error status code
             assertFileContainsLine(out, "Running on 1.2.1 (A Series Of Unlikely Explanations) according to language.version");
@@ -362,7 +362,7 @@ public class CompatTests extends CompilerTests {
                 "--offline",
                 "--flat-classpath",
                 "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules", 
-                "--run", "compiled121depends120::runOn121_"));
+                "--run", "compiled121depends120::runOn121"));
     }
     
     @Test
@@ -385,9 +385,9 @@ public class CompatTests extends CompilerTests {
         runInJBossModules("run", "compiled1299depends120", Arrays.asList(
                 "--offline",
                 "--flat-classpath",
-                "--downgrade-dist",
+                "--link-with-current-distribution",
                 "--rep", "test/src/com/redhat/ceylon/compiler/java/test/compat/modules", 
-                "--run", "compiled1299depends120::runOn121_"));
+                "--run", "compiled1299depends120::runOn121"));
     }
     
     @Test

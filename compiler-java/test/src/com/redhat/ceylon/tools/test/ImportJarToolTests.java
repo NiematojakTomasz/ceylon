@@ -25,12 +25,18 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
+import com.redhat.ceylon.cmr.api.RepositoryManager;
+import com.redhat.ceylon.cmr.ceylon.CeylonUtils;
+import com.redhat.ceylon.cmr.ceylon.CeylonUtils.CeylonRepoManagerBuilder;
 import com.redhat.ceylon.common.FileUtil;
 import com.redhat.ceylon.common.tool.OptionArgumentException;
+import com.redhat.ceylon.common.tool.ToolError;
 import com.redhat.ceylon.common.tool.ToolModel;
 import com.redhat.ceylon.common.tool.ToolUsageError;
+import com.redhat.ceylon.model.cmr.JDKUtils;
 import com.redhat.ceylon.tools.importjar.CeylonImportJarTool;
 import com.redhat.ceylon.tools.importjar.ImportJarException;
 
@@ -445,4 +451,109 @@ public class ImportJarToolTests extends AbstractToolTests {
         Assert.assertTrue(f3.exists());
     }
 
+    @Test
+    public void testMissingOptionalPackages() throws Exception {
+    	// Jetty is compiled for JDK8
+        Assume.assumeTrue("Runs on JDK8", JDKUtils.jdk == JDKUtils.JDK.JDK8);
+        
+    	CeylonRepoManagerBuilder builder = CeylonUtils.repoManager();
+    	RepositoryManager repository = builder.buildManager();
+    	File artifact = repository.getArtifact("org.eclipse.jetty:jetty-server", "9.3.2.v20150730");
+    	Assert.assertNotNull(artifact);
+    	
+        ToolModel<CeylonImportJarTool> model = pluginLoader.loadToolModel("import-jar");
+        Assert.assertNotNull(model);
+
+        // no descriptor
+        CeylonImportJarTool tool;
+        StringBuilder b = new StringBuilder();
+        // make sure we don't get a missing package with array shit in there: [Ljavax.servlet;
+        try{
+        	tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        	tool.setOut(b);
+        	tool.run();
+        	Assert.fail();
+        } catch (ToolUsageError e) {
+        	Assert.assertEquals("Problems were found, aborting. Try adding a descriptor file, see help for more information.", e.getMessage());
+        	Assert.assertEquals("The following JDK modules are used and could be declared as shared imports:\n"+
+        			"    java.base\n"+
+        			"Modules containing the following packages need to be declared as shared imports:\n"+
+        			"(Tip: try running again with the '--show-suggestions' option)\n"+
+        			"    javax.servlet\n"+
+        			"    javax.servlet.http\n"+
+        			"    org.eclipse.jetty.http\n"+
+        			"    org.eclipse.jetty.io\n"+
+        			"    org.eclipse.jetty.jmx\n"+
+        			"    org.eclipse.jetty.util\n"+
+        			"    org.eclipse.jetty.util.component\n"+
+        			"    org.eclipse.jetty.util.resource\n"+
+        			"    org.eclipse.jetty.util.thread\n"
+        			, b.toString());
+        }
+        	
+
+        // all OK
+        tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-module.properties",
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        tool.run();
+
+        // with missing module
+        tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        		// exact
+        		"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound/9.3.2.v20150730=org.eclipse.jetty.jmx",
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        tool.run();
+
+        // with missing module
+        tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        		// **
+        		"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound/9.3.2.v20150730=org.**.jmx",
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        tool.run();
+
+        // with missing module
+        tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        		// *
+        		"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound/9.3.2.v20150730=org.eclipse.jetty.jm*",
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        tool.run();
+
+        try{
+        	// with missing module
+        	tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        			"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        			// * with dots
+        			"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound/9.3.2.v20150730=org.*.jmx",
+        			"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        	tool.run();
+        	Assert.fail();
+        } catch (ToolUsageError e) {
+        	Assert.assertEquals("Problems were found, aborting.", e.getMessage());
+        }
+
+        // with missing module
+        tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        		"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        		// ?
+        		"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound/9.3.2.v20150730=org.eclipse.jetty.jm?",
+        		"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        tool.run();
+
+        try{
+        	// with invalid pattern
+        	tool = pluginFactory.bindArguments(model, getMainTool(), options(
+        			"--descriptor", "test/src/com/redhat/ceylon/tools/test/jetty-server-missing-optional-module.properties",
+        			"--missing-dependency-packages", "org.eclipse.jetty:jetty-jmxnotfound",
+        			"org.eclipse.jetty.jetty-server/9.3.2.v20150730", artifact.getAbsolutePath()));
+        	tool.run();
+        	Assert.fail();
+        } catch (ToolError e) {
+        	Assert.assertEquals("Invalid missing dependencies descriptor : 'org.eclipse.jetty:jetty-jmxnotfound'. 'Syntax is module-name/module-version=package-wildcard(,package-wildcard)*'.", e.getMessage());
+        }
+    }
 }

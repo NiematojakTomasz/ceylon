@@ -60,7 +60,7 @@ public class ImportJarToolTests extends AbstractToolTests {
         this.destDir = new File(destDir);
         this.cacheDir = new File(cacheDir);
         
-        defaultOptions = Arrays.asList("--out", destDir, "--cacherep", cacheDir);
+        defaultOptions = Arrays.asList("--out", destDir, "--cacherep", cacheDir, "--sysrep", getSysRepPath());
     }
 
     private List<String> options(String... opts) {
@@ -434,6 +434,7 @@ public class ImportJarToolTests extends AbstractToolTests {
         Assert.assertNotNull(model);
         CeylonImportJarTool tool = pluginFactory.bindArguments(model, getMainTool(), Arrays.asList(
                 "--cwd", destDir.getPath(),
+                "--sysrep", getSysRepPath(),
                 "--descriptor", "test-descriptor.properties", 
                 "importtest/1.0", "test.jar"));
         tool.run();
